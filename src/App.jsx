@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './App.css';
 
 function App() {
+  const [chats, setChats] = useState([{ id: 1, history: [] }]);
+  const [activeChat, setActiveChat] = useState(1);
   const [file, setFile] = useState(null);
-  const [extractedText, setExtractedText] = useState('');
   const [question, setQuestion] = useState('');
-  const [response, setResponse] = useState('');
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -26,57 +27,91 @@ function App() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setExtractedText(res.data.extracted_text);
+
+      updateChatHistory({ type: 'bot', text: 'File uploaded and text extracted successfully!' });
     } catch (error) {
       console.error('Error uploading file:', error);
+      updateChatHistory({ type: 'bot', text: 'Error uploading file. Please try again.' });
     }
   };
 
   const handleAskQuestion = async () => {
-    if (!extractedText || !question) {
-      alert('Please upload an image and enter a question!');
+    if (!question) {
+      alert('Please enter a question!');
       return;
     }
 
+    updateChatHistory({ type: 'user', text: question });
+
     try {
       const res = await axios.post('http://127.0.0.1:5000/ask', {
-        context: extractedText,
+        context: 'Extracted text here', // Replace with actual extracted text from API
         question: question,
       });
-      setResponse(res.data.response);
+
+      updateChatHistory({ type: 'bot', text: res.data.response });
+      setQuestion('');
     } catch (error) {
       console.error('Error asking question:', error);
+      updateChatHistory({ type: 'bot', text: 'Error asking question. Please try again.' });
     }
   };
 
+  const updateChatHistory = (message) => {
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === activeChat
+          ? { ...chat, history: [...chat.history, message] }
+          : chat
+      )
+    );
+  };
+
+  const handleNewChat = () => {
+    const newChatId = chats.length + 1;
+    setChats([...chats, { id: newChatId, history: [] }]);
+    setActiveChat(newChatId);
+  };
+
   return (
-    <div>
-      <h1>ML Model Integration with React</h1>
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload}>Upload and Extract Text</button>
+    <div className="chatbot-container">
+      <button onClick={handleNewChat} className="new-chat-button">New Chat</button>
+      <h1>Pharma Bot</h1>
 
-      {extractedText && (
-        <div>
-          <h2>Extracted Text:</h2>
-          <pre>{extractedText}</pre>
+      <div className="tabs">
+        {chats.map((chat) => (
+          <div
+            key={chat.id}
+            className={`tab ${activeChat === chat.id ? 'active' : ''}`}
+            onClick={() => setActiveChat(chat.id)}
+          >
+            Chat {chat.id}
+          </div>
+        ))}
+      </div>
 
-          <h2>Ask a Question</h2>
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Enter your question"
-          />
-          <button onClick={handleAskQuestion}>Ask</button>
+      <div className="file-upload-section">
+        <input type="file" onChange={handleFileChange} />
+        <button onClick={handleUpload}>Upload</button>
+      </div>
 
-          {response && (
-            <div>
-              <h2>Response:</h2>
-              <p>{response}</p>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="chat-window">
+        {chats.find((chat) => chat.id === activeChat)?.history.map((chat, index) => (
+          <div key={index} className={`chat-message ${chat.type}`}>
+            {chat.text}
+          </div>
+        ))}
+      </div>
+
+      <div className="question-input-section">
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Ask something..."
+        />
+        <button onClick={handleAskQuestion}>Send</button>
+      </div>
     </div>
   );
 }

@@ -11,16 +11,6 @@ from langchain.chains import LLMChain
 # Load environment variables from .env file
 load_dotenv()
 
-# Debug: Print all environment variables
-print("Loaded environment variables:", os.environ)
-
-# Get the Groq API key
-groq_api_key = os.environ.get("GROQ_API_KEY")
-print("GROQ_API_KEY:", groq_api_key)  # Debug: Print the Groq API key
-
-if not groq_api_key:
-    raise ValueError("GROQ_API_KEY not found in environment variables.")
-
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -31,6 +21,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 reader = easyocr.Reader(['en'])
 
 # Initialize LLM
+groq_api_key = os.environ.get("GROQ_API_KEY")  # Get the API key from environment variables
+if not groq_api_key:
+    raise ValueError("GROQ_API_KEY not found in environment variables.")
+
 llm = ChatGroq(temperature=0.8, model_name="llama-3.2-1b-preview", api_key=groq_api_key)
 
 # Define the prompt template
