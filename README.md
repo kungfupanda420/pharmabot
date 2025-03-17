@@ -1,12 +1,47 @@
-# React + Vite
+# PharmaBot
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PharmaBot is a web application that allows users to upload images of prescriptions or medicine details, extract text from the images using OCR (Optical Character Recognition), and ask questions about the extracted text. The application uses a Flask backend with EasyOCR for text extraction and a language model for answering questions.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Upload images of prescriptions or medicine details
+- Extract text from images using EasyOCR
+- Ask questions about the extracted text
+- Get responses from a language model
 
-## Expanding the ESLint configuration
+## Requirements
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Python 3.7+
+- Node.js and npm
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/kungfupanda420/pharmabot.git
+cd pharmabot
+
+
+
+python -m venv myenv
+source myenv/bin/activate  # On Windows use `myenv\Scripts\activate`
+pip install flask flask-cors python-dotenv opencv-python easyocr langchain-groq langchain
+
+
+## Frontend
+npm install
+
+
+create a .env file and change this to you api key
+GROQ_API_KEY=your_groq_api_key
+
+
+Running the Application
+Start the Flask backend:
+
+source myenv/bin/activate  # On Windows use `myenv\Scripts\activate`
+python [app.py](http://_vscodecontentref_/1)
+
+Start the Vite development server:
+npm run dev
