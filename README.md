@@ -23,13 +23,14 @@ git clone https://github.com/kungfupanda420/pharmabot.git
 cd pharmabot
 
 
-
+```bash
 python -m venv myenv
 source myenv/bin/activate  # On Windows use `myenv\Scripts\activate`
 pip install flask flask-cors python-dotenv opencv-python easyocr langchain-groq langchain
 
 
 ## Frontend
+```bash
 npm install
 
 
@@ -39,9 +40,9 @@ GROQ_API_KEY=your_groq_api_key
 
 Running the Application
 Start the Flask backend:
-
+```bash
 source myenv/bin/activate  # On Windows use `myenv\Scripts\activate`
 python [app.py](http://_vscodecontentref_/1)
-
+```bash
 Start the Vite development server:
 npm run dev
