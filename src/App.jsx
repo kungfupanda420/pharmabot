@@ -3,114 +3,149 @@ import axios from 'axios';
 import './App.css';
 
 function App() {
-  const [chats, setChats] = useState([{ id: 1, history: [] }]);
-  const [activeChat, setActiveChat] = useState(1);
   const [file, setFile] = useState(null);
-  const [question, setQuestion] = useState('');
+  const [message, setMessage] = useState('');
+  const [activeChat, setActiveChat] = useState(1); // Default chat ID
+  const [chats, setChats] = useState([{ id: 1, name: 'Chat 1' }]); // Initialize with default chat
+  const [chatHistories, setChatHistories] = useState({ 1: [] }); // Store chat histories
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  const handleUpload = async () => {
-    if (!file) {
-      alert('Please select a file first!');
+  const handleSendMessage = async () => {
+    if (!message.trim() && !file) {
+      alert('Please enter a message or select a file!');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
+    const updatedHistories = { ...chatHistories };
 
-    try {
-      const res = await axios.post('http://127.0.0.1:5000/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
 
-      updateChatHistory({ type: 'bot', text: 'File uploaded and text extracted successfully!' });
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      updateChatHistory({ type: 'bot', text: 'Error uploading file. Please try again.' });
+      try {
+        const res = await axios.post('http://127.0.0.1:5000/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        updatedHistories[activeChat] = [
+          ...updatedHistories[activeChat],
+          { type: 'user', content: URL.createObjectURL(file), isImage: true },
+        ];
+        setFile(null);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        updatedHistories[activeChat] = [
+          ...updatedHistories[activeChat],
+          { type: 'bot', content: 'Error uploading file. Please try again.', isImage: false },
+        ];
+      }
     }
+
+    if (message.trim()) {
+      updatedHistories[activeChat] = [
+        ...updatedHistories[activeChat],
+        { type: 'user', content: message, isImage: false },
+      ];
+      setMessage('');
+
+      try {
+        const res = await axios.post('http://127.0.0.1:5000/ask', {
+          context: message,
+          question: message,
+        });
+
+        updatedHistories[activeChat] = [
+          ...updatedHistories[activeChat],
+          { type: 'bot', content: res.data.response, isImage: false },
+        ];
+      } catch (error) {
+        console.error('Error sending message:', error);
+        updatedHistories[activeChat] = [
+          ...updatedHistories[activeChat],
+          { type: 'bot', content: 'Error sending message. Please try again.', isImage: false },
+        ];
+      }
+    }
+
+    setChatHistories(updatedHistories);
   };
 
-  const handleAskQuestion = async () => {
-    if (!question) {
-      alert('Please enter a question!');
-      return;
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
     }
-
-    updateChatHistory({ type: 'user', text: question });
-
-    try {
-      const res = await axios.post('http://127.0.0.1:5000/ask', {
-        context: 'Extracted text here', // Replace with actual extracted text from API
-        question: question,
-      });
-
-      updateChatHistory({ type: 'bot', text: res.data.response });
-      setQuestion('');
-    } catch (error) {
-      console.error('Error asking question:', error);
-      updateChatHistory({ type: 'bot', text: 'Error asking question. Please try again.' });
-    }
-  };
-
-  const updateChatHistory = (message) => {
-    setChats((prevChats) =>
-      prevChats.map((chat) =>
-        chat.id === activeChat
-          ? { ...chat, history: [...chat.history, message] }
-          : chat
-      )
-    );
   };
 
   const handleNewChat = () => {
     const newChatId = chats.length + 1;
-    setChats([...chats, { id: newChatId, history: [] }]);
+    const newChat = { id: newChatId, name: `Chat ${newChatId}` };
+    setChats([...chats, newChat]);
+    setChatHistories({ ...chatHistories, [newChatId]: [] });
     setActiveChat(newChatId);
+    setFile(null);
+    setMessage('');
+  };
+
+  const switchChat = (chatId) => {
+    setActiveChat(chatId);
+    setFile(null);
+    setMessage('');
   };
 
   return (
     <div className="chatbot-container">
-      <button onClick={handleNewChat} className="new-chat-button">New Chat</button>
-      <h1>Pharma Bot</h1>
-
-      <div className="tabs">
-        {chats.map((chat) => (
-          <div
-            key={chat.id}
-            className={`tab ${activeChat === chat.id ? 'active' : ''}`}
-            onClick={() => setActiveChat(chat.id)}
-          >
-            Chat {chat.id}
+      <div className="sidebar">
+        <button onClick={handleNewChat} className="new-chat-button">New Chat</button>
+        <div className="chat-list">
+          {chats.map(chat => (
+            <div key={chat.id} className={`chat-item ${activeChat === chat.id ? 'active' : ''}`} onClick={() => switchChat(chat.id)}>
+              {chat.name}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="main-chat">
+        <h1>Pharma Bot</h1>
+        <div className="chat-window">
+          {chatHistories[activeChat]?.map((chat, index) => (
+            <div key={index} className={`chat-message ${chat.type}`}>
+              {chat.isImage ? (
+                <img src={chat.content} alt="Uploaded" className="chat-image" />
+              ) : (
+                <div className="chat-text">{chat.content}</div>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="input-section">
+          <div className="file-upload-section">
+            <label htmlFor="file-upload" className="file-upload-label">
+              📎
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
           </div>
-        ))}
-      </div>
-
-      <div className="file-upload-section">
-        <input type="file" onChange={handleFileChange} />
-        <button onClick={handleUpload}>Upload</button>
-      </div>
-
-      <div className="chat-window">
-        {chats.find((chat) => chat.id === activeChat)?.history.map((chat, index) => (
-          <div key={index} className={`chat-message ${chat.type}`}>
-            {chat.text}
+          <div className="message-input-section">
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown} // Add this line
+              placeholder="Type a message..."
+              autoFocus
+            />
+            <button onClick={handleSendMessage}>Ask</button>
           </div>
-        ))}
-      </div>
-
-      <div className="question-input-section">
-        <input
-          type="text"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Ask something..."
-        />
-        <button onClick={handleAskQuestion}>Send</button>
+        </div>
       </div>
     </div>
   );

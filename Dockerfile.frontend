@@ -1,0 +1,23 @@
+# Use a Node.js base image
+FROM node:18-alpine
+
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY frontend/package.json frontend/package-lock.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the frontend code
+COPY frontend/ .
+
+# Build the React app
+RUN npm run build
+
+# Expose the port your app runs on
+EXPOSE 5173
+
+# Start the app
+CMD ["npm", "run", "dev"]
